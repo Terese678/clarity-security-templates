@@ -1,0 +1,296 @@
+
+import { describe, expect, it, beforeEach } from "vitest";
+
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+const wallet1 = accounts.get("wallet_1")!;
+const wallet2 = accounts.get("wallet_2")!;
+
+describe("DAO Treasury Contract Tests", () => {
+  
+  beforeEach(() => {
+    simnet.setEpoch("3.0");
+  });
+
+  // ==========================================
+  // OWNERSHIP TESTS
+  // ==========================================
+  
+  describe("Ownership Management", () => {
+    it("deployer should be initial owner", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "example-dao-treasury",
+        "get-owner",
+        [],
+        deployer
+      );
+      expect(result).toBeOk(deployer);
+    });
+
+    it("non-owner cannot transfer ownership", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "set-owner",
+        [`'${wallet2}`],
+        wallet1
+      );
+      expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-OWNER
+    });
+
+    it("owner can transfer ownership", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "set-owner",
+        [`'${wallet1}`],
+        deployer
+      );
+      expect(result).toBeOk(Cl.bool(true));
+      
+      // Verify ownership changed
+      const { result: newOwner } = simnet.callReadOnlyFn(
+        "example-dao-treasury",
+        "get-owner",
+        [],
+        deployer
+      );
+      expect(newOwner).toBeOk(wallet1);
+    });
+
+    it("cannot set owner to same address", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "set-owner",
+        [`'${deployer}`],
+        deployer
+      );
+      expect(result).toBeErr(Cl.uint(101)); // ERR-ALREADY-OWNER
+    });
+  });
+
+  // ==========================================
+  // DONATION TESTS (PUBLIC FUNCTION)
+  // ==========================================
+  
+  describe("Donation Function - Public Access", () => {
+    it("anyone can donate to treasury", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "donate",
+        [Cl.uint(1000)],
+        wallet1
+      );
+      expect(result).toBeOk(Cl.bool(true));
+    });
+
+    it("donation increases treasury balance", () => {
+      // Donate 1000 STX
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "donate",
+        [Cl.uint(1000)],
+        wallet1
+      );
+      
+      // Check balance
+      const { result } = simnet.callReadOnlyFn(
+        "example-dao-treasury",
+        "get-balance",
+        [],
+        wallet1
+      );
+      expect(result).toBeOk(Cl.uint(1000));
+    });
+
+    it("multiple users can donate", () => {
+      // Wallet 1 donates 500
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "donate",
+        [Cl.uint(500)],
+        wallet1
+      );
+      
+      // Wallet 2 donates 300
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "donate",
+        [Cl.uint(300)],
+        wallet2
+      );
+      
+      // Check total balance
+      const { result } = simnet.callReadOnlyFn(
+        "example-dao-treasury",
+        "get-balance",
+        [],
+        deployer
+      );
+      expect(result).toBeOk(Cl.uint(800)); // 500 + 300
+    });
+
+    it("cannot donate zero amount", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "donate",
+        [Cl.uint(0)],
+        wallet1
+      );
+      expect(result).toBeErr(Cl.uint(201)); // ERR-INVALID-AMOUNT
+    });
+  });
+
+  // ==========================================
+  // WITHDRAWAL TESTS (ADMIN FUNCTION)
+  // ==========================================
+  
+  describe("Withdrawal Function - Owner Only", () => {
+    beforeEach(() => {
+      // Setup: Add funds to treasury
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "donate",
+        [Cl.uint(1000)],
+        wallet1
+      );
+    });
+
+    it("non-owner CANNOT withdraw funds", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "withdraw",
+        [Cl.uint(500), `'${wallet1}`],
+        wallet1 // Non-owner trying to withdraw
+      );
+      expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-OWNER
+    });
+
+    it("owner CAN withdraw funds", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "withdraw",
+        [Cl.uint(500), `'${wallet2}`],
+        deployer // Owner withdrawing
+      );
+      expect(result).toBeOk(Cl.bool(true));
+    });
+
+    it("withdrawal decreases treasury balance", () => {
+      // Withdraw 400 STX
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "withdraw",
+        [Cl.uint(400), `'${wallet2}`],
+        deployer
+      );
+      
+      // Check remaining balance
+      const { result } = simnet.callReadOnlyFn(
+        "example-dao-treasury",
+        "get-balance",
+        [],
+        deployer
+      );
+      expect(result).toBeOk(Cl.uint(600)); // 1000 - 400
+    });
+
+    it("cannot withdraw more than treasury balance", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "withdraw",
+        [Cl.uint(2000), `'${wallet2}`], // More than 1000 available
+        deployer
+      );
+      expect(result).toBeErr(Cl.uint(200)); // ERR-INSUFFICIENT-FUNDS
+    });
+
+    it("cannot withdraw zero amount", () => {
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "withdraw",
+        [Cl.uint(0), `'${wallet2}`],
+        deployer
+      );
+      expect(result).toBeErr(Cl.uint(201)); // ERR-INVALID-AMOUNT
+    });
+  });
+
+  // ==========================================
+  // OWNERSHIP TRANSFER + WITHDRAWAL TEST
+  // ==========================================
+  
+  describe("Ownership Transfer Security", () => {
+    beforeEach(() => {
+      // Setup: Add funds
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "donate",
+        [Cl.uint(1000)],
+        wallet1
+      );
+    });
+
+    it("old owner cannot withdraw after ownership transfer", () => {
+      // Transfer ownership to wallet1
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "set-owner",
+        [`'${wallet1}`],
+        deployer
+      );
+      
+      // Old owner (deployer) tries to withdraw
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "withdraw",
+        [Cl.uint(500), `'${deployer}`],
+        deployer
+      );
+      expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-OWNER
+    });
+
+    it("new owner can withdraw after ownership transfer", () => {
+      // Transfer ownership to wallet1
+      simnet.callPublicFn(
+        "example-dao-treasury",
+        "set-owner",
+        [`'${wallet1}`],
+        deployer
+      );
+      
+      // New owner (wallet1) withdraws
+      const { result } = simnet.callPublicFn(
+        "example-dao-treasury",
+        "withdraw",
+        [Cl.uint(500), `'${wallet2}`],
+        wallet1
+      );
+      expect(result).toBeOk(Cl.bool(true));
+    });
+  });
+
+  // ==========================================
+  // BALANCE CHECK TESTS
+  // ==========================================
+  
+  describe("Balance Checking - Public Access", () => {
+    it("anyone can check treasury balance", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "example-dao-treasury",
+        "get-balance",
+        [],
+        wallet1 // Non-owner checking balance
+      );
+      expect(result).toBeOk(Cl.uint(0));
+    });
+
+    it("initial balance is zero", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "example-dao-treasury",
+        "get-balance",
+        [],
+        deployer
+      );
+      expect(result).toBeOk(Cl.uint(0));
+    });
+  });
+});
