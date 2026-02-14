@@ -115,6 +115,12 @@ clarity_version = 3
 epoch = 3.0
 depends_on = ['dao-core']
 
+[contracts.example-extension-usage]
+path = 'contracts/examples/example-extension-usage.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['dao-core']
+
 [repl.analysis]
 passes = ['check_checker']
 

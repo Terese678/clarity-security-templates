@@ -7,8 +7,8 @@
 ;; approved governance proposals that pass the 2-of-3 operator threshold.
 
 ;; Error code
-(define-constant ERR-NOT-DAO (err u100))
-(define-constant ERR-INVALID-AMOUNT (err u200))
+(define-constant ERR-NOT-DAO (err u2000))
+(define-constant ERR-INVALID-AMOUNT (err u2001))
 
 ;; Contract data
 (define-data-var treasury-limit uint u1000000)
@@ -21,6 +21,7 @@
 (define-public (set-treasury-limit (new-limit uint))
     (begin
         ;; ONE-LINE DAO PROTECTION 
+        ;; it requires DAO governance approval (2-of-3 operators must vote)
         (asserts! (is-eq contract-caller .dao-core) ERR-NOT-DAO)
         
         (asserts! (> new-limit u0) ERR-INVALID-AMOUNT)

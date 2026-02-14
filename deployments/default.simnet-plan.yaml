@@ -125,6 +125,11 @@ plan:
             path: contracts/examples/example-dao-usage.clar
             clarity-version: 3
         - emulated-contract-publish:
+            contract-name: example-extension-usage
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/examples/example-extension-usage.clar
+            clarity-version: 3
+        - emulated-contract-publish:
             contract-name: multi-sig-trait
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/traits/multi-sig-trait.clar
