@@ -1,15 +1,15 @@
-;;=======================================
-;; OWNABLE TEMPLATE v1.0
+;; Title: Ownable Template
 ;; Author: Timothy Terese Chimbiv
-;; Copy this into your contract for owner controls
-;;=======================================
+;; Description: Copy this into your contract for single-owner access controls.
+;; It provides one-line security for admin functions.
+;; Copy this into your contract for owner controls.
 
 ;; owner storage
 (define-data-var contract-owner principal tx-sender)
 
 ;; error codes
-(define-constant ERR-NOT-OWNER (err u100))
-(define-constant ERR-ALREADY-OWNER (err u101))
+(define-constant ERR-NOT-OWNER (err u200))
+(define-constant ERR-ALREADY-OWNER (err u201))
 
 ;; check if caller is owner 
 (define-private (is-owner)

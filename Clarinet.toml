@@ -6,21 +6,114 @@ telemetry = true
 cache_dir = '.\.cache'
 requirements = []
 
+# -----------------------------------------------------------
+# TRAITS 
+# -----------------------------------------------------------
+
 [contracts.ownable-trait]
-path = 'contracts/ownable-trait.clar'
+path = 'contracts/traits/ownable-trait.clar'
 clarity_version = 3
 epoch = 3.0
+
+[contracts.extension-trait]
+path = 'contracts/traits/extension-trait.clar'
+clarity_version = 3
+epoch = 3.0
+
+[contracts.proposal-trait]
+path = 'contracts/traits/proposal-trait.clar'
+clarity_version = 3
+epoch = 3.0
+
+[contracts.multi-sig-trait]
+path = 'contracts/traits/multi-sig-trait.clar'
+clarity_version = 3
+epoch = 3.0
+
+[contracts.sip010-ft-trait]
+path = 'contracts/traits/sip010-ft-trait.clar'
+clarity_version = 3
+epoch = 3.0
+
+# -----------------------------------------------------------
+# CORE CONTRACT
+# -----------------------------------------------------------
+
+[contracts.dao-core]
+path = 'contracts/core/dao-core.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['extension-trait', 'proposal-trait']
+
+# -----------------------------------------------------------
+# GOVERNANCE PATTERNS
+# -----------------------------------------------------------
 
 [contracts.ownable-template]
-path = 'contracts/ownable-template.clar'
+path = 'contracts/governance/ownable-template.clar'
 clarity_version = 3
 epoch = 3.0
+depends_on = ['ownable-trait']
+
+[contracts.operator-governance]
+path = 'contracts/governance/operator-governance.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['extension-trait', 'proposal-trait', 'dao-core']
+
+# -----------------------------------------------------------
+# TREASURY
+# -----------------------------------------------------------
+
+[contracts.treasury]
+path = 'contracts/treasury/treasury.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['extension-trait', 'dao-core', 'sip010-ft-trait']
+
+# -----------------------------------------------------------
+# PROPOSALS
+# -----------------------------------------------------------
+
+[contracts.dp000-bootstrap]
+path = 'contracts/proposals/dp000-bootstrap.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['proposal-trait', 'dao-core', 'operator-governance', 'treasury']
+
+[contracts.dp001-add-operator]
+path = 'contracts/proposals/dp001-add-operator.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['proposal-trait', 'operator-governance']
+
+[contracts.dp002-remove-operator]
+path = 'contracts/proposals/dp002-remove-operator.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['proposal-trait', 'operator-governance']
+
+[contracts.dp003-transfer-stx]
+path = 'contracts/proposals/dp003-transfer-stx.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['proposal-trait', 'treasury']
+
+# -----------------------------------------------------------
+# EXAMPLES
+# -----------------------------------------------------------
 
 [contracts.example-dao-treasury]
-path = 'contracts/example-dao-treasury.clar'
+path = 'contracts/examples/example-dao-treasury.clar'
 clarity_version = 3
 epoch = 3.0
-depends_on = ['ownable-trait']  
+depends_on = ['ownable-trait']
+
+[contracts.example-dao-usage]
+path = 'contracts/examples/example-dao-usage.clar'
+clarity_version = 3
+epoch = 3.0
+depends_on = ['dao-core']
 
 [repl.analysis]
 passes = ['check_checker']

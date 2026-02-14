@@ -1,17 +1,14 @@
-;;=======================================
-;; EXAMPLE: DAO TREASURY CONTRACT
-;; It shows how ownable-tempalte.clar can be used
+;; Title: DAO Treasury Example
 ;; Author: Timothy Terese Chimbiv
-;;=======================================
-;; This example shows how a developer can use the ownable template
-;; in a real contract
-
-;; what this contract does it this:
-;; lets anyone donate STX to treasury
+;; Description: It demonstrates how to use the ownable-template.clar 
+;; providing one-line security with (try! (assert-owner))in a contract.
+;; This example implements a simple treasury with owner-only withdrawals.
+;; 
+;; WHAT THIS CONTRACT DOES:
+;; lets anyone donate STX to the treasury
 ;; anyone can check the treasury's balance
-;; but, only owner can withdraw STX from treasury
-;;=======================================
-
+;; only the owner can withdraw STX from the treasury
+;;
 ;;=======================================
 ;; STEP 1: IMPLEMENT THE TRAIT
 ;;=======================================

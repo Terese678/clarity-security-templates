@@ -1,7 +1,9 @@
-;;=======================================
-;; OWNABLE TRAIT v1.0
+
+;; Title: Ownable Trait
 ;; Author: Timothy Terese Chimbiv
-;;=======================================
+;; Description: This trait defines the interface for single-owner access control.
+;; Any contract implementing this trait can be owned and controlled
+;; by a single principal.
 
 (define-trait ownable-trait 
     (
