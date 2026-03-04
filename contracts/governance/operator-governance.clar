@@ -78,7 +78,7 @@
 ;; Add or remove an operator (only DAO can call)
 (define-public (set-operators (operator principal) (enabled bool))
   (begin
-    (asserts! true err-unauthorised) 
+    (try! (is-dao-or-extension)) ;; fixed:was (asserts! true err-unauthorised)
     (print {event: "operator-change", operator: operator, enabled: enabled})
     (map-set operators operator enabled)
     (ok true)
