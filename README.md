@@ -1,3 +1,5 @@
+<!-- talentapp:project_verification:b37c24e2c07199934bc18ddc59c0d30e5d9801010838a2ceda22c027f04cd4bd4c15ab0f6112d322e44a33d6bf53ce86ad89e3c0f56d1a69db00ac67c5fca6ae -->
+
 # Clarity Security Templates
 
 Reusable security patterns for Clarity smart contracts on Stacks, providing standardized governance and access control.
