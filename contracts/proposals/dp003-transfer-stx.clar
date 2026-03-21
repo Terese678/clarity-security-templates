@@ -13,12 +13,12 @@
 ;; PROPOSAL EXECUTION
 
 (define-public (execute (sender principal))
-  (begin
-    ;; Transfer 1000 STX (1,000,000 micro-STX) from treasury to recipient
-    ;; Replace the amount and recipient address with actual values
-    (try! (contract-call? .treasury transfer-stx u1000000 'ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND))
+    (begin
+        ;; Transfer 1000 STX (1,000,000 micro-STX) from treasury to recipient
+        ;; Replace the amount and recipient address with actual values
+        (try! (contract-call? .treasury transfer-stx u1000000 'ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND))
     
-    (print {event: "stx-transferred", amount: u1000000, recipient: 'ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND})
-    (ok true)
-  )
+        (print {event: "stx-transferred", amount: u1000000, recipient: 'ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND})
+        (ok true)
+    )
 )

@@ -8,8 +8,8 @@
 ;; function allows the DAO core to communicate with extensions.
 
 (define-trait extension-trait
-  (
-    ;; Called by DAO core to enable/disable or configure the extension
-    (callback (principal (buff 34)) (response bool uint))
-  )
+    (
+        ;; Called by DAO core to enable/disable or configure the extension
+        (callback (principal (buff 34)) (response bool uint))
+    )
 )

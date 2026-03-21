@@ -13,12 +13,13 @@
 ;; PROPOSAL EXECUTION
 
 (define-public (execute (sender principal))
-  (begin
-    ;; Remove the operator
-    ;; Replace this address with the actual principal to be removed
-    (try! (contract-call? .operator-governance set-operators 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM false))
+    (begin
+        ;; completely removes this address from the DAO 
+        ;; they lose all voting, proposal creation, and execution rights
+        ;; change this address to whoever you want to remove
+        (try! (contract-call? .operator-governance set-operators 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM false))
     
-    (print {event: "operator-removed", operator: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM})
-    (ok true)
-  )
+        (print {event: "operator-removed", operator: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM})
+        (ok true)
+    )
 )

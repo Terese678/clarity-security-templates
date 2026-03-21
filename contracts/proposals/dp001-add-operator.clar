@@ -13,12 +13,12 @@
 ;; PROPOSAL EXECUTION
 
 (define-public (execute (sender principal))
-  (begin
-    ;; Add the new operator
-    ;; Note: replace this address with the actual principal to be added
-    (try! (contract-call? .operator-governance set-operators 'ST2REHHS5J3CERCRBEPMGH7921Q6PYKAADT7JP2VB true))
+    (begin
+        ;; Add the new operator
+        ;; Note: replace this address with the actual principal to be added
+        (try! (contract-call? .operator-governance set-operators 'ST2REHHS5J3CERCRBEPMGH7921Q6PYKAADT7JP2VB true))
     
-    (print {event: "operator-added", operator: 'ST2REHHS5J3CERCRBEPMGH7921Q6PYKAADT7JP2VB})
-    (ok true)
-  )
+        (print {event: "operator-added", operator: 'ST2REHHS5J3CERCRBEPMGH7921Q6PYKAADT7JP2VB})
+        (ok true)
+    )
 )

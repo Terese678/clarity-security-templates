@@ -121,6 +121,15 @@ clarity_version = 4
 epoch = '3.3'
 depends_on = ['dao-core']
 
+# -----------------------------------------------------------
+# REGISTRY
+# -----------------------------------------------------------
+[contracts.verification-registry]
+path = 'contracts/registry/verification-registry.clar'
+clarity_version = 4
+epoch = '3.3'
+depends_on = ['dao-core', 'proposal-trait', 'extension-trait']
+
 [repl.analysis]
 passes = ['check_checker']
 

@@ -143,4 +143,9 @@ plan:
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: "contracts\\governance\\ownable-template.clar"
             clarity-version: 4
+        - emulated-contract-publish:
+            contract-name: verification-registry
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: "contracts\\registry\\verification-registry.clar"
+            clarity-version: 4
       epoch: "3.3"
