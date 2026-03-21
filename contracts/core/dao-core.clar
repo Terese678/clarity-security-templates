@@ -38,34 +38,31 @@
   (default-to false (map-get? extensions extension))
 )
 
-;; Verify caller is the DAO or an enabled extension
+;; Verify caller is an enabled extension or the DAO core itself
 (define-private (is-self-or-extension)
-  (ok (asserts! 
-    (or 
-      (is-eq tx-sender (as-contract tx-sender))  ;; Is caller the DAO itself?
-      (is-extension contract-caller)              ;; Or is caller an enabled extension?
-    )
-    err-unauthorised  ;; Reject if neither condition is true
-  ))
+    (ok (asserts!
+        (is-extension contract-caller)
+        err-unauthorised
+    ))
 )
 
 ;; INITIALIZATION
 
 ;; Initialize the DAO with a bootstrap proposal (one-time only)
 (define-public (construct (proposal <proposal-trait>))
-  (let
-    (
-      (sender tx-sender)
+    (let
+        (
+            (sender tx-sender)
+        )
+        ;; Can only be called once by the deployer
+        (asserts! (is-eq (var-get initialized) false) err-already-executed)
+    
+        ;; Mark as initialized
+        (var-set initialized true)
+    
+        ;; Execute the bootstrap proposal with DAO authority
+        (as-contract (execute proposal sender))
     )
-    ;; Can only be called once by the deployer
-    (asserts! (is-eq (var-get initialized) false) err-already-executed)
-    
-    ;; Mark as initialized
-    (var-set initialized true)
-    
-    ;; Execute the bootstrap proposal with DAO authority
-    (as-contract (execute proposal sender))
-  )
 )
 
 ;; EXTENSION MANAGEMENT
@@ -76,57 +73,72 @@
 
 ;; Enable or disable a single extension (DAO or extensions only)
 (define-public (set-extension (extension principal) (enabled bool))
-  (begin
-    (try! (is-self-or-extension))  ;; Only DAO or extensions can modify extensions
-    (print {event: "extension", extension: extension, enabled: enabled})  ;; Log the change
-    (ok (map-set extensions extension enabled))  ;; Update the extension's status
-  )
+    (begin
+        ;; only DAO or extensions can modify extensions
+        (try! (is-self-or-extension))  
+
+        ;; log the change
+        (print {event: "extension", extension: extension, enabled: enabled}) 
+
+        ;; update the extension's status 
+        (ok (map-set extensions extension enabled))  
+    )
 )
 
 ;; Enable or disable multiple extensions in a single call
 ;; Used by bootstrap proposals to initialize the DAO in one transaction
 (define-public (set-extensions (extension-list (list 200 {extension: principal, enabled: bool})))
-  (begin
-    (try! (is-self-or-extension))  ;; Only DAO or extensions can modify extensions
-    (ok (map set-extension-iter extension-list))  ;; Process each extension in the list
-  )
+    (begin
+        ;; Only DAO or extensions can modify extensions
+        (try! (is-self-or-extension))
+
+        ;; Process each extension in the list
+        (ok (map set-extension-iter extension-list))  
+    )
 )
 
 ;; Processes a single item from the set-extensions list
 (define-private (set-extension-iter (item {extension: principal, enabled: bool}))
-  (begin
-    (print {event: "extension", extension: (get extension item), enabled: (get enabled item)})  ;; Log each change
-    (map-set extensions (get extension item) (get enabled item))  ;; Update each extension's status
-  )
+    (begin
+        ;; Log each change
+        (print {event: "extension", extension: (get extension item), enabled: (get enabled item)})
+
+        ;; Update each extension's status  
+        (map-set extensions (get extension item) (get enabled item))  
+    )
 )
 
 ;; PROPOSAL EXECUTION
 
 ;; Execute a proposal with DAO authority (extensions only)
 (define-public (execute (proposal <proposal-trait>) (sender principal))
-  (begin
-    (try! (is-self-or-extension))  ;; Only DAO or extensions can execute proposals
+    (begin
+        (try! (is-self-or-extension))  ;; Only DAO or extensions can execute proposals
     
-    ;; Prevent executing the same proposal twice
-    (asserts! (is-none (map-get? executed-proposals (contract-of proposal))) err-already-executed)
+        ;; Prevent executing the same proposal twice
+        (asserts! (is-none (map-get? executed-proposals (contract-of proposal))) err-already-executed)
     
-    (map-set executed-proposals (contract-of proposal) true)  ;; Mark proposal as executed
-    
-    (print {event: "execute", proposal: proposal, sender: sender})  ;; Log execution
-    (as-contract (contract-call? proposal execute sender))  ;; Run proposal with DAO authority
-  )
+        ;; Mark proposal as executed
+        (map-set executed-proposals (contract-of proposal) true)  
+
+        ;; Log execution
+        (print {event: "execute", proposal: proposal, sender: sender}) 
+
+        ;; Run proposal with DAO authority 
+        (as-contract (contract-call? proposal execute sender))  
+    )
 )
 
 ;; EXTENSION TRAIT IMPLEMENTATION
 
 ;; Required by extension-trait (currently unused)
 (define-public (callback (sender principal) (memo (buff 34)))
-  (ok true)
+    (ok true)
 )
 
 ;; READ-ONLY HELPERS
 
 ;; Check if a proposal has been executed
 (define-read-only (executed-at (proposal principal))
-  (map-get? executed-proposals proposal)
+    (map-get? executed-proposals proposal)
 )
