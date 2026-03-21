@@ -9,8 +9,8 @@
 ;; allowing proposals to manage funds, update parameters, or modify operators.
 
 (define-trait proposal-trait
-  (
-    ;; Executes the proposal's logic when called by the DAO core
-    (execute (principal) (response bool uint))
-  )
+    (
+        ;; Executes the proposal's logic when called by the DAO core
+        (execute (principal) (response bool uint))
+    )
 )

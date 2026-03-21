@@ -21,56 +21,72 @@
 
 ;; Verify caller is DAO core or an enabled extension
 (define-private (is-dao-or-extension)
-  (ok (asserts! 
-    (or 
-      (is-eq contract-caller .dao-core)  ;; Is caller the DAO core?
-      (contract-call? .dao-core is-extension contract-caller)  ;; Or is caller an enabled extension?
+    (ok (asserts! 
+            (or 
+                ;; Is caller the DAO core?
+                (is-eq contract-caller .dao-core) 
+
+                ;; Or is caller an enabled extension?
+                (contract-call? .dao-core is-extension contract-caller)  
+            )
+            err-unauthorised
+        )
     )
-    err-unauthorised
-  ))
 )
 
 ;; STX TRANSFERS
 
 ;; Transfer STX from treasury to recipient (DAO or extensions only)
 (define-public (transfer-stx (amount uint) (recipient principal))
-  (begin
-    (try! (is-dao-or-extension))  ;; Only DAO or extensions can transfer
-    (asserts! (> amount u0) err-invalid-amount)  ;; Amount must be greater than zero
-    
-    (print {event: "stx-transfer", amount: amount, recipient: recipient})  ;; Log the transfer
-    (as-contract (stx-transfer? amount tx-sender recipient))  ;; Execute transfer with treasury authority
-  )
+    (begin
+        ;; Only DAO or extensions can transfer
+        (try! (is-dao-or-extension))  
+
+        ;; Amount must be greater than zero
+        (asserts! (> amount u0) err-invalid-amount)  
+
+        ;; Log the transfer
+        (print {event: "stx-transfer", amount: amount, recipient: recipient})  
+
+        ;; Execute transfer with treasury authority
+        (as-contract (stx-transfer? amount tx-sender recipient))  
+    )
 )
 
 ;; SIP-010 TOKEN TRANSFERS
 
 ;; Transfer SIP-010 tokens from treasury to recipient (DAO or extensions only)
 (define-public (transfer-ft (token <sip010-trait>) (amount uint) (recipient principal))
-  (begin
-    (try! (is-dao-or-extension))  ;; Only DAO or extensions can transfer
-    (asserts! (> amount u0) err-invalid-amount)  ;; Amount must be greater than zero
+    (begin
+        ;; Only DAO or extensions can transfer
+        (try! (is-dao-or-extension)) 
+
+        ;; Amount must be greater than zero 
+        (asserts! (> amount u0) err-invalid-amount)  
     
-    (print {event: "ft-transfer", token: (contract-of token), amount: amount, recipient: recipient})  ;; Log the transfer
-    (as-contract (contract-call? token transfer amount tx-sender recipient none))  ;; Execute token transfer
-  )
+        ;; Log the transfer
+        (print {event: "ft-transfer", token: (contract-of token), amount: amount, recipient: recipient}) 
+
+        ;; Execute token transfer 
+        (as-contract (contract-call? token transfer amount tx-sender recipient none))  
+    )
 )
 
 ;; READ-ONLY FUNCTIONS
 
 ;; Get STX balance held by the treasury
 (define-read-only (get-stx-balance)
-  (ok (stx-get-balance (as-contract tx-sender)))
+    (ok (stx-get-balance (as-contract tx-sender)))
 )
 
 ;; Get SIP-010 token balance held by the treasury
 (define-public (get-ft-balance (token <sip010-trait>))
-  (contract-call? token get-balance (as-contract tx-sender))
+    (contract-call? token get-balance (as-contract tx-sender))
 )
 
 ;; EXTENSION TRAIT IMPLEMENTATION
 
 ;; This required by extension-trait (currently unused)
 (define-public (callback (sender principal) (memo (buff 34)))
-  (ok true)
+    (ok true)
 )
