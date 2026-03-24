@@ -17,7 +17,7 @@
 (define-data-var paused bool false)
 
 ;;---------------------------------------
-;; AUTHORIZATION PATTERN (COPY THIS!)
+;; AUTHORIZATION PATTERN 
 ;;---------------------------------------
 
 ;; Developers: Copy this function into your contract
@@ -33,7 +33,7 @@
 )
 
 ;;---------------------------------------
-;; PROTECTED FUNCTIONS (YOUR BUSINESS LOGIC)
+;; PROTECTED FUNCTIONS 
 ;;---------------------------------------
 
 ;; Example function showing how to use the protection
