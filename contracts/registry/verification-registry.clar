@@ -32,7 +32,7 @@
 ;; DATA MAPS
 ;; ============================================================
 
-;; This is th main storage that maps each contract's unique 32-byte hash
+;; This is the main storage that maps each contract's unique 32-byte hash
 ;; to the details of that verified template
 ;; the hash is generated directly from the contract code by Clarity
 ;; so no one can fake or swap it out
@@ -47,7 +47,7 @@
     }
 )
 
-;; Name-to-hash lookup enablesbdevelopers to search by template name
+;; Name-to-hash lookup enables developers to search by template name
 ;; instead of having to know the hash upfront
 (define-map template-name-to-hash
     (string-ascii 64)  ;; key: template name
@@ -209,8 +209,8 @@
     )
 )
 
-;; Look up a template hash using its human readable name
-;; Useful for developers who know the name but want to verify the hash
+;; Look up a template hash using its template name
+;; Useful for developers who know the name but need to find its hash
 (define-read-only (get-hash-by-name (template-name (string-ascii 64)))
     (ok (map-get? template-name-to-hash template-name))
 )

@@ -91,9 +91,12 @@
 (define-public (create-proposal (description (string-ascii 256)) (proposal-contract principal))
     (let
         (
-            (proposal-id (+ (var-get proposal-count) u1))  ;; Generate new proposal ID
+            ;; Generate new proposal ID
+            (proposal-id (+ (var-get proposal-count) u1))  
         )
-        (try! (assert-is-operator))  ;; Only operators can create proposals
+
+        ;; Only operators can create proposals
+        (try! (assert-is-operator))  
     
         ;; Store the new proposal with initial vote counts of zero
         (map-set proposals proposal-id {
@@ -105,9 +108,14 @@
             proposal-contract: proposal-contract
         })
     
-        (var-set proposal-count proposal-id)  ;; Increment the proposal counter
-        (print {event: "proposal-created", proposal-id: proposal-id, proposer: tx-sender})  ;; Log creation
-        (ok proposal-id)  ;; Return the new proposal ID
+        ;; Increment the proposal counter
+        (var-set proposal-count proposal-id) 
+
+        ;; Log creation 
+        (print {event: "proposal-created", proposal-id: proposal-id, proposer: tx-sender})
+
+        ;; Return the new proposal ID  
+        (ok proposal-id)  
     )
 )
 
@@ -117,17 +125,33 @@
 (define-public (signal (proposal-id uint) (approve bool) (proposal <proposal-trait>))
     (let
         (
-            (proposal-data (unwrap! (map-get? proposals proposal-id) err-proposal-not-found))  ;; Load proposal data
-            (already-voted (default-to false (map-get? votes { proposal-id: proposal-id, voter: tx-sender })))  ;; Check if already voted
-            (new-votes-for (if approve (+ (get votes-for proposal-data) u1) (get votes-for proposal-data)))  ;; Calculate new for votes
-            (new-votes-against (if approve (get votes-against proposal-data) (+ (get votes-against proposal-data) u1)))  ;; Calculate new against votes
+            ;; Load proposal data
+            (proposal-data (unwrap! (map-get? proposals proposal-id) err-proposal-not-found))  
+
+            ;; Check if already voted
+            (already-voted (default-to false (map-get? votes { proposal-id: proposal-id, voter: tx-sender }))) 
+
+            ;; Calculate new for votes 
+            (new-votes-for (if approve (+ (get votes-for proposal-data) u1) (get votes-for proposal-data))) 
+
+            ;; Calculate new against votes 
+            (new-votes-against (if approve (get votes-against proposal-data) (+ (get votes-against proposal-data) u1)))  
         )
-        (try! (assert-is-operator))  ;; Only operators can vote
-        (asserts! (not already-voted) err-already-voted)  ;; Prevent double voting
-        (asserts! (not (get executed proposal-data)) err-already-executed)  ;; Prevent voting on executed proposals
-    
-        (map-set votes { proposal-id: proposal-id, voter: tx-sender } true)  ;; Record that this operator voted
-        (map-set proposals proposal-id (merge proposal-data {  ;; Update vote counts
+
+        ;; Only operators can vote
+        (try! (assert-is-operator))  
+
+        ;; Prevent double voting
+        (asserts! (not already-voted) err-already-voted)  
+
+        ;; Prevent voting on executed proposals
+        (asserts! (not (get executed proposal-data)) err-already-executed)  
+
+        ;; Record that this operator voted
+        (map-set votes { proposal-id: proposal-id, voter: tx-sender } true)  
+
+        ;; Update vote counts
+        (map-set proposals proposal-id (merge proposal-data {  
         votes-for: new-votes-for,
         votes-against: new-votes-against
         }))
@@ -135,14 +159,24 @@
         ;; If approved and threshold met, execute the proposal
         (if (and approve (>= new-votes-for signals-required))
             (begin
-                (map-set proposals proposal-id (merge proposal-data { executed: true }))  ;; Mark as executed
-                (print {event: "proposal-executed", proposal-id: proposal-id})  ;; Log execution
-                (try! (contract-call? .dao-core execute proposal tx-sender))  ;; Execute via DAO core
-                (ok true)  ;; Return true (proposal executed)
+                ;; Mark as executed
+                (map-set proposals proposal-id (merge proposal-data { executed: true }))
+
+                ;; Log execution  
+                (print {event: "proposal-executed", proposal-id: proposal-id}) 
+
+                ;; Execute via DAO core 
+                (try! (contract-call? .dao-core execute proposal tx-sender))
+
+                ;; Return true (proposal executed)  
+                (ok true)  
             )
             (begin
-                (print {event: "vote-recorded", proposal-id: proposal-id, voter: tx-sender})  ;; Log the vote
-                (ok false)  ;; Return false (more votes needed)
+                ;; Log the vote
+                (print {event: "vote-recorded", proposal-id: proposal-id, voter: tx-sender})  
+
+                ;; Return false (more votes needed)
+                (ok false)  
             )
         )
     )

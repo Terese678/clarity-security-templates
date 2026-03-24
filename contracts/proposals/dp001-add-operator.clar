@@ -15,7 +15,8 @@
 (define-public (execute (sender principal))
     (begin
         ;; Add the new operator
-        ;; Note: replace this address with the actual principal to be added
+        ;; TODO: replace this test address with the actual principal 
+        ;; you want to add as operator before deploying to mainnet
         (try! (contract-call? .operator-governance set-operators 'ST2REHHS5J3CERCRBEPMGH7921Q6PYKAADT7JP2VB true))
     
         (print {event: "operator-added", operator: 'ST2REHHS5J3CERCRBEPMGH7921Q6PYKAADT7JP2VB})
