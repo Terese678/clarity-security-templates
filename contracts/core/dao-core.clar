@@ -35,7 +35,7 @@
 
 ;; Returns true if the contract is an enabled extension
 (define-read-only (is-extension (extension principal))
-  (default-to false (map-get? extensions extension))
+    (default-to false (map-get? extensions extension))
 )
 
 ;; Verify caller is an enabled extension or the DAO core itself
