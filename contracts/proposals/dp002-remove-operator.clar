@@ -8,6 +8,8 @@
 ;; from the specified principal. Use this pattern when an operator's
 ;; wallet is compromised or a team member leaves the organization.
 
+;; This contract is a proposal 
+;; it gets submitted to the DAO and executed only after the required operators approve it
 (impl-trait .proposal-trait.proposal-trait)
 
 ;; PROPOSAL EXECUTION

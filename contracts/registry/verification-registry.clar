@@ -66,6 +66,60 @@
 (define-data-var dao-contract principal tx-sender)
 
 ;; ============================================================
+;; READ-ONLY FUNCTIONS
+;; ============================================================
+
+;; Any developer can call this to check if a contract is genuine and active
+;; returns true if verified and active, false if not found or revoked
+;; This is where Friedger's identicon integration will plug in
+(define-read-only (is-verified (template-contract principal))
+    (match (contract-hash? template-contract)
+        ;; Hash computed successfully check the registry
+        template-hash (match (map-get? verified-templates template-hash)
+            ;; found in registry return whether it is still active
+            template-data (ok (get is-active template-data))
+            ;; but if not in registry, not verified
+            (ok false)
+        )
+        ;; contract-hash? failed treat as not verified
+        error (ok false)
+    )
+)
+
+;; Get the full metadata of a verified template by passing the contract
+;; returns none if the contract has never been verified
+(define-read-only (get-template-details (template-contract principal))
+    (match (contract-hash? template-contract)
+        ;; Hash computed look up full record
+        template-hash (ok (map-get? verified-templates template-hash))
+        ;; could not compute hash invalid contract reference
+        error (err ERR-INVALID-CONTRACT)
+    )
+)
+
+;; Look up a template hash using its template name
+;; Useful for developers who know the name but need to find its hash
+(define-read-only (get-hash-by-name (template-name (string-ascii 64)))
+    (ok (map-get? template-name-to-hash template-name))
+)
+
+;; Return the total number of templates ever verified
+;; includes revoked templates use is-verified to check active status
+(define-read-only (get-total-verified)
+    (ok (var-get total-verified))
+)
+
+;; Return the principal of the DAO contract governing this registry
+(define-read-only (get-dao-contract)
+    (ok (var-get dao-contract))
+)
+
+;; Return the current version of this registry contract
+(define-read-only (get-registry-version)
+    ( ok REGISTRY-VERSION)
+)
+
+;; ============================================================
 ;; PRIVATE FUNCTIONS
 ;; ============================================================
 
@@ -85,7 +139,8 @@
 (define-public (set-dao-contract (new-dao principal))
     (begin
         ;; Only the current dao-contract can transfer governance
-        (asserts! (is-eq tx-sender (var-get dao-contract)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller (var-get dao-contract)) ERR-NOT-AUTHORIZED)
+
         ;; Update the governing DAO principal
         (ok (var-set dao-contract new-dao))
     )
@@ -177,56 +232,3 @@
     )
 )
 
-;; ============================================================
-;; READ-ONLY FUNCTIONS
-;; ============================================================
-
-;; Any developer can call this to check if a contract is genuine and active
-;; returns true if verified and active, false if not found or revoked
-;; This is where Friedger's identicon integration will plug in
-(define-read-only (is-verified (template-contract principal))
-    (match (contract-hash? template-contract)
-        ;; Hash computed successfully check the registry
-        template-hash (match (map-get? verified-templates template-hash)
-            ;; found in registry return whether it is still active
-            template-data (ok (get is-active template-data))
-            ;; but if not in registry, not verified
-            (ok false)
-        )
-        ;; contract-hash? failed treat as not verified
-        error (ok false)
-    )
-)
-
-;; Get the full metadata of a verified template by passing the contract
-;; returns none if the contract has never been verified
-(define-read-only (get-template-details (template-contract principal))
-    (match (contract-hash? template-contract)
-        ;; Hash computed look up full record
-        template-hash (ok (map-get? verified-templates template-hash))
-        ;; could not compute hash invalid contract reference
-        error (err ERR-INVALID-CONTRACT)
-    )
-)
-
-;; Look up a template hash using its template name
-;; Useful for developers who know the name but need to find its hash
-(define-read-only (get-hash-by-name (template-name (string-ascii 64)))
-    (ok (map-get? template-name-to-hash template-name))
-)
-
-;; Return the total number of templates ever verified
-;; includes revoked templates use is-verified to check active status
-(define-read-only (get-total-verified)
-    (ok (var-get total-verified))
-)
-
-;; Return the principal of the DAO contract governing this registry
-(define-read-only (get-dao-contract)
-    (ok (var-get dao-contract))
-)
-
-;; Return the current version of this registry contract
-(define-read-only (get-registry-version)
-    (ok REGISTRY-VERSION)
-)

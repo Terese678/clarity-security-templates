@@ -2,8 +2,8 @@
 // Author: Timothy Terese Chimbiv
 // Purpose: Reusable functions for all tests
 
-import { tx } from '@hirosystems/clarinet-sdk';
-import { Cl } from '@stacks/transactions';
+import { tx } from '@stacks/clarinet-sdk';
+import { Cl, contractPrincipalCV } from '@stacks/transactions';
 
 // Contract names
 export const contracts = {
@@ -38,21 +38,17 @@ export const operators = {
 // Initialize the DAO by running bootstrap
 export function initializeDAO() {
   const { deployer } = getAccounts();
-  
   const result = simnet.mineBlock([
     tx.callPublicFn(
       contracts.daoCore,
       'construct',
-      [Cl.contractPrincipal(deployer, contracts.bootstrap)],
+      [contractPrincipalCV(deployer, 'dp000-bootstrap')],
       deployer
     ),
   ]);
-  
-  // DEBUG: Print what happened
   console.log('=== BOOTSTRAP EXECUTION ===');
   console.log('Result:', result[0].result);
   console.log('Events:', JSON.stringify(result[0].events, null, 2));
-  
   return result;
 }
 

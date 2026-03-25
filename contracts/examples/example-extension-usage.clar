@@ -17,6 +17,20 @@
 (define-data-var paused bool false)
 
 ;;---------------------------------------
+;; READ-ONLY FUNCTIONS
+;;---------------------------------------
+
+;; Returns the maximum amount allowed for a single withdrawal
+(define-read-only (get-max-withdrawal)
+    (var-get max-withdrawal)
+)
+
+;; Returns whether the contract is currently paused or active
+(define-read-only (is-paused)
+    (var-get paused)
+)
+
+;;---------------------------------------
 ;; AUTHORIZATION PATTERN 
 ;;---------------------------------------
 
@@ -40,37 +54,33 @@
 ;; Developers: Replace this with your own contract logic
 (define-public (set-max-withdrawal (new-max uint))
     (begin
-        ;; Use the protection pattern
+        ;; Block anyone who is not the DAO or an approved extension
         (try! (is-dao-or-extension))
         
         ;; Your contract logic here
+        ;; reject zero, a zero limit would block all withdrawals
         (asserts! (> new-max u0) ERR-INVALID-AMOUNT)
+
+        ;; Save the new withdrawal limit
         (var-set max-withdrawal new-max)
+
         (print {event: "max-withdrawal-updated", new-max: new-max})
         (ok true)
     )
 )
 
+;; This function pauses or unpauses the contract used during emergencies or maintenance
 (define-public (toggle-pause (pause bool))
     (begin
-        ;; Use the protection pattern
+        ;; Always start with this protection line
+        ;; it ensures that only the DAO or an approved extension can call this function
         (try! (is-dao-or-extension))
         
-        ;; Your contract logic here
+        ;; Your contract logic goes below this line
+        ;; everything here is protected because of the line above
         (var-set paused pause)
+
         (print {event: "pause-toggled", paused: pause})
         (ok true)
     )
-)
-
-;;---------------------------------------
-;; PUBLIC READ FUNCTIONS
-;;---------------------------------------
-
-(define-read-only (get-max-withdrawal)
-    (ok (var-get max-withdrawal))
-)
-
-(define-read-only (is-paused)
-    (ok (var-get paused))
 )
