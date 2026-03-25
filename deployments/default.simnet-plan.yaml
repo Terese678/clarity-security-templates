@@ -98,16 +98,6 @@ plan:
       path: contracts/proposals/dp002-remove-operator.clar
       clarity-version: 4
     - transaction-type: emulated-contract-publish
-      contract-name: sip010-ft-trait
-      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-      path: contracts/traits/sip010-ft-trait.clar
-      clarity-version: 4
-    - transaction-type: emulated-contract-publish
-      contract-name: treasury
-      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-      path: contracts/treasury/treasury.clar
-      clarity-version: 4
-    - transaction-type: emulated-contract-publish
       contract-name: dp003-transfer-stx
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/proposals/dp003-transfer-stx.clar
@@ -141,6 +131,16 @@ plan:
       contract-name: ownable-template
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/governance/ownable-template.clar
+      clarity-version: 4
+    - transaction-type: emulated-contract-publish
+      contract-name: sip010-ft-trait
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/traits/sip010-ft-trait.clar
+      clarity-version: 4
+    - transaction-type: emulated-contract-publish
+      contract-name: treasury
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/treasury/treasury.clar
       clarity-version: 4
     - transaction-type: emulated-contract-publish
       contract-name: verification-registry

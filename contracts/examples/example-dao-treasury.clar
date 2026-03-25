@@ -43,6 +43,11 @@
     (ok (var-get contract-owner))
 )
 
+;; it's a public information that anyone can check balance
+(define-read-only (get-balance)
+    (ok (stx-get-balance tx-sender))
+)
+
 ;; transfer ownership (only owner can call)
 (define-public (set-owner (new-owner principal)) 
     (begin
@@ -75,26 +80,22 @@
 ;;---------------------------------------
 ;; PUBLIC FUNCTION (anyone can call)
 ;;---------------------------------------
-;; notice: no (try! (assert-owner)) here
-;; this function changes state adds to treasury but is a public function
 (define-public (donate (amount uint))
     (begin
         ;; validate amount
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
 
-        ;; transfer STX from donor to treasury
-        (stx-transfer? amount tx-sender (as-contract tx-sender))
+        ;; transfer STX from donor to this contract
+        (stx-transfer? amount tx-sender tx-sender)
     )
 )
 
 ;;---------------------------------------
 ;; ADMIN FUNCTION (only owner can call)
 ;;---------------------------------------
-;; notice here: has (try! (assert-owner))
-;; this function changes state removes from treasury and OWNER-ONLY can do that
 (define-public (withdraw (amount uint) (recipient principal))
     (begin
-        ;; SECURITY: template patter in action
+        ;; SECURITY: template pattern in action
         ;; if caller is not owner then function stops here
         (try! (assert-owner))
 
@@ -102,20 +103,11 @@
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
 
         ;; check the treasury has enough funds
-        (asserts! (>= (stx-get-balance (as-contract tx-sender)) amount) ERR-INSUFFICIENT-FUNDS)
+        (asserts! (>= (stx-get-balance tx-sender) amount) ERR-INSUFFICIENT-FUNDS)
 
         ;; withdraw from treasury
-        (as-contract (stx-transfer? amount tx-sender recipient))
+        (stx-transfer? amount tx-sender recipient)
     )
-)
-
-;;---------------------------------------
-;; READ-ONLY FUNCTION (anyone can call)
-;;---------------------------------------
-;; notice: no (try! (assert-owner))
-;; it's a public information that anyone can check balance
-(define-read-only (get-balance)
-    (ok (stx-get-balance (as-contract tx-sender)))
 )
 
 

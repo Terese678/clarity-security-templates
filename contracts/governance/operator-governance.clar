@@ -50,11 +50,32 @@
 ;; Records which operators have voted on which proposals to prevent double-voting
 (define-map votes { proposal-id: uint, voter: principal } bool)
 
-;; AUTHORIZATION CHECK
+;; READ-ONLY FUNCTIONS
 
 ;; Check if a principal is an operator
 (define-read-only (is-operator (who principal))
     (ok (default-to false (map-get? operators who)))
+)
+
+;; Check if a proposal was approved and executed
+(define-read-only (is-proposal-approved (proposal-id uint))
+    (ok (get executed (unwrap! (map-get? proposals proposal-id) err-proposal-not-found)))
+)
+
+;; Get proposal details
+(define-read-only (get-proposal (proposal-id uint))
+    (map-get? proposals proposal-id)
+)
+
+;; Checks if an operator has voted on a proposal
+;; this returns false by default if no vote is found, so we treat it as "has not voted"
+(define-read-only (has-voted (proposal-id uint) (voter principal))
+    (default-to false (map-get? votes { proposal-id: proposal-id, voter: voter }))
+)
+
+;; Get current proposal count
+(define-read-only (get-proposal-count)
+    (var-get proposal-count)
 )
 
 ;; Verify caller is an operator
@@ -62,12 +83,13 @@
     (ok (asserts! (default-to false (map-get? operators tx-sender)) err-not-operator))
 )
 
-;; Check if caller is DAO or an enabled extension
+;; Check if caller is DAO, an enabled extension, or a proposal being executed by the DAO
 (define-private (is-dao-or-extension)
-    (ok (asserts! 
-        (or 
+    (ok (asserts!
+        (or
             (is-eq contract-caller .dao-core)
-            (contract-call? .dao-core is-extension contract-caller) 
+            (contract-call? .dao-core is-extension contract-caller)
+            (contract-call? .dao-core is-executed-proposal contract-caller)
         )
         err-unauthorised
     ))
@@ -180,28 +202,6 @@
             )
         )
     )
-)
-
-;; READ-ONLY FUNCTIONS
-
-;; Check if a proposal was approved and executed
-(define-read-only (is-proposal-approved (proposal-id uint))
-    (ok (get executed (unwrap! (map-get? proposals proposal-id) err-proposal-not-found)))
-)
-
-;; Get proposal details
-(define-read-only (get-proposal (proposal-id uint))
-    (map-get? proposals proposal-id)
-)
-
-;; Check if someone voted on a proposal
-(define-read-only (has-voted (proposal-id uint) (voter principal))
-    (default-to false (map-get? votes { proposal-id: proposal-id, voter: voter }))
-)
-
-;; Get current proposal count
-(define-read-only (get-proposal-count)
-    (ok (var-get proposal-count))
 )
 
 ;; EXTENSION TRAIT IMPLEMENTATION

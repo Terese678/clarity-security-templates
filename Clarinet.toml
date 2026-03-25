@@ -97,7 +97,7 @@ depends_on = ['proposal-trait', 'operator-governance']
 path = 'contracts/proposals/dp003-transfer-stx.clar'
 clarity_version = 4
 epoch = '3.3'
-depends_on = ['proposal-trait', 'treasury']
+depends_on = ['proposal-trait', 'dao-core', 'treasury']
 
 # -----------------------------------------------------------
 # EXAMPLES
@@ -130,11 +130,3 @@ clarity_version = 4
 epoch = '3.3'
 depends_on = ['dao-core', 'proposal-trait', 'extension-trait']
 
-[repl.analysis]
-passes = ['check_checker']
-
-[repl.analysis.check_checker]
-strict = false
-trusted_sender = false
-trusted_caller = false
-callee_filter = false
