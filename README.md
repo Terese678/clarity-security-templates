@@ -1,375 +1,144 @@
-<!-- talentapp:project_verification:b37c24e2c07199934bc18ddc59c0d30e5d9801010838a2ceda22c027f04cd4bd4c15ab0f6112d322e44a33d6bf53ce86ad89e3c0f56d1a69db00ac67c5fca6ae -->
+# clarity-security-templates
 
-# Clarity Security Templates
+## Why this exists
 
-Reusable security patterns for Clarity smart contracts on Stacks, providing standardized governance and access control.
-
-## What This Is
-
-A collection of production-ready templates for securing Clarity smart contracts:
-
-1. **Ownable Pattern** - Single owner control (solo projects)
-2. **DAO Governance Pattern** - Multi-signature operator voting (team projects)
-3. **Treasury Management** - Secure fund custody with authorization
-
-All patterns are based on proven implementations from ExecutorDAO and designed for easy adoption.
+Writing secure multi-admin logic from scratch every time is where most contracts get it wrong. This template gives Clarity developers a vetted starting point, the approval flow, replay protection, pause control, and a swappable rules layer are already handled. Drop it in, replace the rules contract with your own checks, and build on top without rebuilding the security layer from zero.
 
 ---
 
-## The Problem
+## Contract Structure
 
-Developers building on Stacks face three challenges:
+Three contracts, each with a specific job:
 
-1. **Security-critical code** - Authorization and governance are hard to get right
-2. **No standardization** - Every project implements access control differently
-3. **High development cost** - Building secure governance from scratch takes weeks
+```
+contracts/
+├── traits/
+│   └── security-rules-trait.clar   # The interface every rules contract must implement
+└── wallet/
+    ├── rules.clar                  # Default implementation of the rules trait
+    └── wallet.clar                 # The multi-sig wallet logic
+```
 
-This leads to bugs, vulnerabilities, and delayed launches.
-
----
-
-## The Solution
-
-Copy proven security patterns into your contract. Add one line of protection to admin functions. The templates handle all the complex security logic.
-
-**Instead of writing custom governance:** Copy a battle-tested pattern
-**Instead of risking security bugs:** Use templates with comprehensive testing
-**Instead of weeks of development:** Ship secure contracts in hours
+**Deploy order matters:**
+```
+security-rules-trait.clar -> rules.clar -> wallet.clar
+```
 
 ---
 
-## Quick Start
+## How it works
 
-### Pattern 1: Ownable (Single Owner)
+1. The deployer calls `initialize` once — setting 3 admins and a threshold (minimum 2)
+2. Any registered admin calls `approve` with an `action-id`
+3. Once the approval count hits the threshold, any admin can call `execute`
+4. The `rules` contract validates the request before execution goes through
+5. Once executed, the action is recorded and cannot be replayed
 
-**Use when:** You need one person to control the contract
+---
 
-**Step 1:** Add the trait
+## Public Functions
+
+### `initialize`
 ```clarity
-(impl-trait .ownable-trait.ownable-trait)
+(initialize admin-one admin-two admin-three starting-threshold)
 ```
+Called once by the deployer. Sets the initial admins and the minimum approval threshold. Threshold cannot be less than `u2`.
 
-**Step 2:** Copy the template code from `ownable-template.clar`
+---
 
-**Step 3:** Protect admin functions
+### `approve`
 ```clarity
-(define-public (withdraw (amount uint))
-    (begin
-        (try! (assert-owner))  ;; One-line protection
-        ;; Your logic here
-    )
-)
+(approve action-id)
 ```
-
-**See:** `contracts/examples/example-dao-treasury.clar`
+Called by a registered admin to approve a pending action. Each admin can only approve once per action.
 
 ---
 
-### Pattern 2: DAO Governance (Multi-Sig)
-
-**Use when:** Multiple operators need to approve changes (2-of-3 threshold)
-
-**Step 1:** Deploy the DAO system
+### `execute`
 ```clarity
-dao-core.clar              ;; The execution engine
-operator-governance.clar   ;; Multi-sig voting
-treasury.clar             ;; Fund management
+(execute action-id request rules)
 ```
+Executes an action once the threshold is met. Validates the request through the rules contract before proceeding.
 
-**Step 2:** Initialize with bootstrap proposal
+---
+
+### `pause` / `unpause`
 ```clarity
-;; Run once at deployment
-(contract-call? .dao-core construct .dp000-bootstrap)
+(pause)
+(unpause)
 ```
-
-**Step 3:** Protect your contract functions
-```clarity
-(define-public (update-settings (new-value uint))
-    (begin
-        ;; Only callable through approved DAO proposals
-        (asserts! (is-eq contract-caller .dao-core) ERR-NOT-DAO)
-        ;; Your logic here
-    )
-)
-```
-
-**See:** `contracts/examples/example-dao-usage.clar`
+Any registered admin can freeze all `approve` and `execute` calls in an emergency, and unfreeze when resolved.
 
 ---
 
-## Architecture
+## Read-Only Functions
 
-### Core Contracts
-
-**dao-core.clar**
-- Manages extensions and executes approved proposals
-- Provides DAO authority for proposal execution
-- Prevents replay attacks
-
-**operator-governance.clar**
-- Multi-signature voting system (2-of-3 threshold by default)
-- Operators create and vote on proposals
-- Auto-executes when threshold is met
-
-**treasury.clar**
-- Holds and manages DAO funds (STX and SIP-010 tokens)
-- Only callable by DAO core or enabled extensions
-- Secure custody with as-contract pattern
-
-### Bootstrap & Examples
-
-**dp000-bootstrap.clar**
-- One-time initialization proposal
-- Enables core extensions
-- Sets initial operators
-
-**dp001-add-operator.clar**
-- Example: Adding a new operator
-
-**dp002-remove-operator.clar**
-- Example: Removing a compromised operator
-
-**dp003-transfer-stx.clar**
-- Example: Moving funds from treasury
-
----
-
-## How It Works
-
-### Governance Flow
-
-1. **Operator creates proposal**
-```clarity
-   (contract-call? .operator-governance create-proposal 
-       "Add new operator Alice" 
-       .dp001-add-operator)
-```
-
-2. **Operators vote**
-```clarity
-   (contract-call? .operator-governance signal 
-       u1     ;; proposal-id
-       true   ;; approve
-       .dp001-add-operator)
-```
-
-3. **Auto-execution at threshold**
-   - When 2 operators approve (2-of-3 threshold)
-   - Operator-governance calls dao-core.execute()
-   - Proposal runs with DAO authority
-   - Changes are applied
-
-### Security Model
-
-**Authorization Layers:**
-1. Only operators can create proposals
-2. Only operators can vote
-3. Threshold must be met (2-of-3)
-4. Each proposal executes only once
-5. Treasury operations require DAO approval
-
-**Replay Protection:**
-- Every proposal can execute only once
-- Prevents malicious re-execution
-
-**Operator Safety:**
-- Cannot vote twice on same proposal
-- Cannot change vote after signaling
-- Operators can be added/removed via governance
-
----
-
-## Examples
-
-### Example 1: Team Wallet (Multi-Sig)
-
-**Scenario:** 3 founders managing company funds
-
-**Setup:**
-1. Deploy DAO system
-2. Bootstrap with 3 operator addresses
-3. Set 2-of-3 threshold
-
-**Usage:**
-- Any operator proposes spending
-- 2 operators must approve
-- Funds transfer automatically
-
-### Example 2: DeFi Protocol Parameters
-
-**Scenario:** Governance-controlled protocol settings
-
-**Setup:**
-1. Deploy your protocol contract
-2. Add DAO authorization check
-3. Connect to operator-governance
-
-**Usage:**
-- Operators propose parameter changes
-- 2-of-3 vote required
-- Protocol updates securely
-
-### Example 3: NFT Marketplace Admin
-
-**Scenario:** Decentralized marketplace governance
-
-**Setup:**
-1. Deploy marketplace contract
-2. Use DAO governance for admin functions
-3. Community operators manage settings
-
-**Usage:**
-- Operators propose fee changes
-- Multi-sig approval required
-- Marketplace stays decentralized
-
----
-
-## Testing
-
-Run the complete test suite:
-```bash
-clarinet check  # Verify all contracts compile
-clarinet test   # Run security tests
-```
-
-All 16 contracts must pass validation before deployment.
-
-For detailed test results, see [TEST_REPORT.md](TEST_REPORT.md).
-
----
-
-## When to Use Each Pattern
-
-### Use Ownable When:
-- ✅ Solo project or single admin
-- ✅ Simple authorization needs
-- ✅ Prototype or MVP stage
-- ✅ You control the contract entirely
-
-### Use DAO Governance When:
-- ✅ Team project (2+ people)
-- ✅ Need multi-signature security
-- ✅ Managing significant funds
-- ✅ Community governance required
-- ✅ Production DeFi protocol
-
----
-
-## Security Considerations
-
-**Ownable Pattern:**
-- ⚠️ Single point of failure
-- ⚠️ Owner wallet compromise = total loss
-- ✅ Simple and gas-efficient
-- ✅ Easy to audit
-
-**DAO Governance Pattern:**
-- ✅ No single point of failure
-- ✅ Compromise of one operator ≠ loss
-- ✅ Self-correcting (remove bad actors)
-- ⚠️ More complex setup
-
-See [SECURITY.md](SECURITY.md) for detailed security analysis.
+| Function | Returns |
+|---|---|
+| `get-contract-owner` | The deployer's principal |
+| `get-threshold` | Current approval threshold |
+| `get-initialized` | Whether the contract has been set up |
+| `is-paused` | Current pause status |
+| `is-admin (who)` | Whether an address is a registered admin |
+| `has-approved (action signer)` | Whether a specific admin approved an action |
+| `get-approval-count (action-id)` | How many approvals an action has |
+| `is-executed (action-id)` | Whether an action has already been executed |
 
 ---
 
 ## Error Codes
 
-### Ownable Pattern
-- `u100` - Not the contract owner
-- `u101` - Cannot set owner to same address
-
-### DAO Governance Examples
-- `u2000` - Not authorized (DAO governance required)
-- `u2001` - Invalid amount
-- `u2100` - Unauthorized (DAO or extension required)
-- `u2101` - Invalid amount
-
-### DAO Core
-- `u3000` - Unauthorized (not DAO or extension)
-- `u3001` - Proposal already executed
-- `u3002` - Invalid extension
-
-### Operator Governance
-- `u4000` - Unauthorized (not an operator)
-- `u4001` - Proposal already executed
-- `u4002` - Proposal not found
-- `u4003` - Already voted on this proposal
-- `u4004` - Not an operator
-
-### Treasury
-- `u5000` - Unauthorized (not DAO or extension)
-- `u5001` - Transfer failed
-- `u5002` - Invalid amount
+| Constant | Code | Meaning |
+|---|---|---|
+| `ERR_UNAUTHORIZED` | u401 | Caller is not allowed to perform this action |
+| `ERR_ALREADY_APPROVED` | u402 | This admin already approved this action |
+| `ERR_NOT_ENOUGH_APPROVALS` | u403 | Threshold not reached yet |
+| `ERR_NOT_ADMIN` | u404 | Caller is not a registered admin |
+| `ERR_ALREADY_INITIALIZED` | u405 | Contract has already been initialized |
+| `ERR_ALREADY_EXECUTED` | u406 | This action has already been executed |
+| `ERR_THRESHOLD_TOO_LOW` | u407 | Threshold must be at least 2 |
+| `ERR_PAUSED` | u408 | Contract is paused, no actions allowed |
 
 ---
 
-## Deployment Guide
+## Replacing the Rules Contract
 
-### For Local Testing (Clarinet)
+The `rules.clar` is intentionally simple — it rejects empty requests and anything over 1048 bytes. You can swap it out with your own logic as long as it implements the `security-rules-trait`:
 
-1. Clone the repository
-2. Run `clarinet check` to verify contracts
-3. Run `clarinet test` to execute test suite
-4. Deploy to devnet for integration testing
-
-### For Mainnet Deployment
-
-1. **Deploy core contracts:**
-```
-   dao-core.clar
-   operator-governance.clar
-   treasury.clar
-```
-
-2. **Update bootstrap proposal:**
-   - Replace placeholder addresses with real operator wallets
-   - Verify threshold settings
-
-3. **Initialize DAO:**
 ```clarity
-   (contract-call? .dao-core construct .dp000-bootstrap)
-```
-
-4. **Verify setup:**
-   - Check operators are set correctly
-   - Test proposal creation
-   - Confirm voting works
-
----
-
-## Project Structure
-```
-contracts/
-├── traits/              # Interface definitions
-├── core/               # DAO execution engine
-├── governance/         # Voting systems
-├── treasury/           # Fund management
-├── examples/           # Usage examples
-└── proposals/          # Bootstrap & examples
-
-tests/                  # Comprehensive test suite
+(define-trait security-rules-trait
+    (
+        (is-allowed ((buff 2048)) (response bool uint))
+    )
+)
 ```
 
 ---
 
-## Contributing
+## Development Setup
 
-Built by Timothy Terese Chimbiv based on proven patterns from ExecutorDAO (Marvin Janssen).
+**Requirements:**
+- [Clarinet](https://github.com/hirosystems/clarinet)
+- Node.js
 
-Feedback, issues, and contributions welcome on GitHub.
+**Check contracts:**
+```bash
+clarinet check
+```
+
+**Run the console:**
+```bash
+clarinet console
+```
+
+**Run tests:**
+```bash
+npm install
+npm test
+```
 
 ---
 
-## License
+## Author
 
-MIT
-
----
-
-## Links
-
-- GitHub: [github.com/Terese678/clarity-security-templates](https://github.com/Terese678/clarity-security-templates)
-- Stacks Forum: [View community discussion](https://forum.stacks.org)
-- Author: Timothy Terese Chimbiv
+Timothy Terese Chimbiv
