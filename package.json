@@ -1,0 +1,30 @@
+{
+  "name": "clarity-security-templates",
+  "version": "1.0.0",
+  "description": "Writing secure multi-admin logic from scratch every time is where most contracts get it wrong. This template gives Clarity developers a vetted starting point, the approval flow, replay protection, pause control, and a swappable rules layer are already handled. Drop it in, replace the rules contract with your own checks, and build on top without rebuilding the security layer from zero.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Terese678/clarity-security-templates.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Terese678/clarity-security-templates/issues"
+  },
+  "homepage": "https://github.com/Terese678/clarity-security-templates#readme",
+  "devDependencies": {
+    "@stacks/clarinet-sdk": "^3.9.1",
+    "@stacks/transactions": "^7.2.0",
+    "vitest": "^4.0.7",
+    "vitest-environment-clarinet": "^3.0.2"
+  }
+}
