@@ -80,6 +80,7 @@
 )
 
 ;; Lets get threshold thats stored in the threshold variable
+;; which will return the approval threshold its been set to
 (define-read-only (get-threshold) 
     (var-get threshold)
 )
