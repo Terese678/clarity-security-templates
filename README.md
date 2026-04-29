@@ -8,20 +8,22 @@ Writing secure multi-admin logic from scratch every time is where most contracts
 
 ## Contract Structure
 
-Three contracts, each with a specific job:
+Four contracts, each with a specific job:
 
 ```
 contracts/
 ├── traits/
 │   └── security-rules-trait.clar   # The interface every rules contract must implement
-└── wallet/
-    ├── rules.clar                  # Default implementation of the rules trait
-    └── wallet.clar                 # The multi-sig wallet logic
+├── wallet/
+│   ├── rules.clar                  # Default implementation of the rules trait
+│   └── wallet.clar                 # The multi-sig wallet logic
+└── registry/
+    └── verification-registry.clar  # On-chain registry of verified template contracts
 ```
 
 **Deploy order matters:**
 ```
-security-rules-trait.clar -> rules.clar -> wallet.clar
+security-rules-trait.clar -> rules.clar -> wallet.clar -> verification-registry.clar
 ```
 
 ---
@@ -33,6 +35,42 @@ security-rules-trait.clar -> rules.clar -> wallet.clar
 3. Once the approval count hits the threshold, any admin can call `execute`
 4. The `rules` contract validates the request before execution goes through
 5. Once executed, the action is recorded and cannot be replayed
+
+---
+
+## Verification Registry
+
+The `verification-registry.clar` contract uses the Clarity 4 `contract-hash?` built-in to store the on-chain hash of verified template contracts. This means any developer can call `is-verified` to confirm they are interacting with the original audited code and that it has not been tampered with.
+
+Only the registry owner can verify or revoke templates. Ownership can be transferred to another address at any time.
+
+**Deploy and verify a template:**
+```clarity
+(contract-call? .verification-registry verify-template .wallet)
+```
+
+**Check if a contract is verified:**
+```clarity
+(contract-call? .verification-registry is-verified .wallet)
+```
+
+### Verification Registry Functions
+
+| Function | Description |
+|---|---|
+| `verify-template (contract)` | Owner adds a contract to the registry |
+| `revoke-template (contract)` | Owner removes a contract from the registry |
+| `is-verified (contract)` | Returns true if the contract is currently verified |
+| `get-contract-owner` | Returns the current registry owner |
+| `set-contract-owner (new-owner)` | Transfers ownership to another address |
+
+### Verification Registry Error Codes
+
+| Constant | Code | Meaning |
+|---|---|---|
+| `ERR_NOT_AUTHORIZED` | u900 | Caller is not the registry owner |
+| `ERR_ALREADY_VERIFIED` | u901 | This contract is already in the registry |
+| `ERR_NOT_VERIFIED` | u902 | This contract is not in the registry |
 
 ---
 
@@ -111,6 +149,19 @@ The `rules.clar` is intentionally simple — it rejects empty requests and anyth
         (is-allowed ((buff 2048)) (response bool uint))
     )
 )
+```
+
+---
+
+## Tests
+
+18 tests across 3 files, all passing.
+
+```
+tests/
+├── wallet.test.ts               # 8 tests — initialization, pause control, approvals, execution, replay protection
+├── rules.test.ts                # 3 tests — valid requests, empty requests, oversized requests
+└── verification-registry.test.ts # 7 tests — ownership, verification, duplicates, revocation, ownership transfer
 ```
 
 ---
