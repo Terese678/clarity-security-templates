@@ -1,3 +1,4 @@
+<!-- <meta name="talentapp:project_verification" content="b37c24e2c07199934bc18ddc59c0d30e5d9801010838a2ceda22c027f04cd4bd4c15ab0f6112d322e44a33d6bf53ce86ad89e3c0f..."> -->
 # clarity-security-templates
 
 ## Why this exists
